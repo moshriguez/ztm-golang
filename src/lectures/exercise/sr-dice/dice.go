@@ -23,7 +23,34 @@
 
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"math/rand"
+	"time"
+)
 
 func main() {
+	timesRolled := 1
+	numberOfDice := 2
+	numberOfSides := 6
+	sum := 0
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < timesRolled * numberOfDice; i++ {
+		currentDiceRoll := rand.Intn(numberOfSides) + 1
+		sum += currentDiceRoll
+		// fmt.Println("Current dice:", currentDiceRoll)
+		// fmt.Println("running total:", sum)
+	}
+	fmt.Println("Dice total:", sum)
+	if sum == 2 && numberOfDice == 2 {
+		fmt.Println("Snake eyes")
+	}
+	if sum == 7 {
+		fmt.Println("Lucky 7")
+	}
+	if sum % 2 == 0 {
+		fmt.Println("Even")
+	} else {
+		fmt.Println("Odd")
+	}
 }
