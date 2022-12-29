@@ -18,5 +18,20 @@ import "fmt"
 
 type Part string
 
+func printParts(title string, assLine []Part) {
+	fmt.Println("\n---", title, "---")
+	for i := 0; i < len(assLine); i++ {
+		part := assLine[i]
+		fmt.Println(part)
+	}
+}
+
 func main() {
+	assemblyLine := []Part{"snorkel", "polyurethane bag", "body lotion"}
+	printParts("OG list", assemblyLine)
+	assemblyLine = append(assemblyLine, "5 oz can of cat food", "allen wrench")
+	printParts("updated list", assemblyLine)
+	assemblyLine = assemblyLine[3:]
+	printParts("sliced list", assemblyLine)
+
 }
