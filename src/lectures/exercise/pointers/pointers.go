@@ -18,6 +18,58 @@ package main
 
 import "fmt"
 
-func main() {
+const (
+	Active   = true
+	Inactive = false
+)
 
+type SecurityTag bool
+
+type Item struct {
+	name string
+	tag  SecurityTag
+}
+
+func activate(item *Item) {
+	item.tag = Active
+}
+
+func deactivate(item *Item) {
+	item.tag = Inactive
+}
+
+func checkout(list []*Item) {
+	fmt.Println("checking out...")
+	for _, item := range list {
+		deactivate(item)
+	}
+}
+
+func addInventory(itemName string) Item {
+	i := Item{name: itemName}
+	activate(&i)
+	return i
+}
+
+func printShoppingList(list []*Item) {
+	fmt.Println("Shopping List:")
+	for _, item := range list {
+		fmt.Println(item)
+	}
+}
+
+func main() {
+	catFood := addInventory("cat food")
+	bowl := addInventory("bowl")
+	waterFountain := addInventory("water fountain")
+	kibble := addInventory("kibble")
+
+	shoppingList := []*Item{&catFood, &bowl, &waterFountain, &kibble}
+	printShoppingList(shoppingList)
+
+	deactivate(shoppingList[3])
+	printShoppingList(shoppingList)
+
+	checkout(shoppingList)
+	printShoppingList(shoppingList)
 }
