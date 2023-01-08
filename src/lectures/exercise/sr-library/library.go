@@ -27,32 +27,37 @@ import (
 type Book struct {
 	title string
 	author string
-	checkedOut bool
+	totalCopies int
+	numCheckedOut int
+}
+
+type CheckedOutBook struct {
 	checkedOutDate time.Time
 	returnedDate time.Time
-	checkedOutBy	*Member
 }
 
 type Member struct {
 	name string
+	borrowed map[string]CheckedOutBook
 }
 
 type Library struct {
-	Books []*Book
-	Members []*Member
+	Books map[string]Book
+	Members map[string]Member
 }
 
-func AddBook(lib *Library, title, author string) {
+func AddBook(lib *Library, title, author string, number int) {
 	book := Book{
 		title: title,
 		author: author,
+		totalCopies: number,
 	}
-	lib.Books = append(lib.Books, &book)
+	lib.Books[title] = book
 }
 
 func AddMember(lib *Library, name string) {
-	member := Member{name}
-	lib.Members = append(lib.Members, &member)
+	member := Member{name, make(map[string]CheckedOutBook)}
+	lib.Members[name] = member
 }
 
 func PrintLibrary(lib *Library) {
@@ -63,72 +68,68 @@ func PrintLibrary(lib *Library) {
 	fmt.Println("- - - - - - -")
 	for _, member := range lib.Members {
 		fmt.Println(member.name)
-		fmt.Println("")
+		fmt.Println()
 	}
 	fmt.Println("- - - - - - -")
 	fmt.Println("- Books -")
 	for _, book := range lib.Books {
 		fmt.Println(book.title, "by", book.author)
-		fmt.Println("checked out:", book.checkedOut)
-		if book.checkedOut {
-			fmt.Println("checked out by:", book.checkedOutBy.name)
-		}
-		fmt.Println("")
+		fmt.Println("total copies:", book.totalCopies, "/ copies available:", book.totalCopies - book.numCheckedOut)
+		fmt.Println()
 	}
 }
 
 func CheckOutBook(lib *Library, title, memberName string) error {
-	book, err := findBook(lib.Books, title)
-	if err != nil {
-		return err
+	book, ok := lib.Books[title]
+	if !ok {
+		return fmt.Errorf("book not found in library")
 	}
-	member, err := findMember(lib.Members, memberName)
-	if err != nil {
-		return err
+	if book.numCheckedOut == book.totalCopies {
+		return fmt.Errorf("all copies are checked out")
 	}
-	book.checkedOut = true
-	book.checkedOutDate = time.Now()
-	book.checkedOutBy = member
-	return nil
-}
-
-func CheckInBook(lib *Library, title string) error {
-	book, err := findBook(lib.Books, title)
-	if err != nil {
-		return err
+	member, ok := lib.Members[memberName]
+	if !ok {
+		return fmt.Errorf("member not found in library")
 	}
-
-	book.checkedOut = false
-	book.returnedDate = time.Now()
-	book.checkedOutBy = &Member{}
+	member.borrowed[title] = CheckedOutBook{
+		checkedOutDate: time.Now(),
+	}
+	book.numCheckedOut += 1
+	lib.Books[title] = book
+	lib.Members[memberName] = member
 
 	return nil
 }
 
-func findBook(list []*Book, title string) (*Book, error) {
-	for _, book := range list {
-		if book.title == title {
-			return book, nil
-		}
+func CheckInBook(lib *Library, title, memberName string) error {
+	book, ok := lib.Books[title]
+	if !ok {
+		return fmt.Errorf("book not found in library")
 	}
-	return nil, fmt.Errorf("book not found in library")
-}
+	member, ok := lib.Members[memberName]
+	if !ok {
+		return fmt.Errorf("member not found in library")
+	}
+	checkedOutBook, ok := member.borrowed[title]
+	if !ok {
+		return fmt.Errorf("book was not checked out by this member")
+	}
+	book.numCheckedOut -= 1
+	checkedOutBook.returnedDate = time.Now()
+	member.borrowed[title] = checkedOutBook
+	
+	lib.Books[title] = book
+	lib.Members[memberName] = member
 
-func findMember(list []*Member, name string) (*Member, error) {
-	for _, member := range list {
-		if member.name == name {
-			return member, nil
-		}
-	}
-	return nil, fmt.Errorf("member not found in library")
+	return nil
 }
 
 func main() {
-	var lib Library
-	AddBook(&lib, "One Fish, Two Fish, Red Fish, Blue Fish", "Dr. Suess")
-	AddBook(&lib, "Pachinko", "Min Jin Lee")
-	AddBook(&lib, "It", "Stephen King")
-	AddBook(&lib, "Post Office", "Charles Bukowski")
+	lib := Library{make(map[string]Book), make(map[string]Member)}
+	AddBook(&lib, "One Fish, Two Fish, Red Fish, Blue Fish", "Dr. Suess", 2)
+	AddBook(&lib, "Pachinko", "Min Jin Lee", 5)
+	AddBook(&lib, "It", "Stephen King", 3)
+	AddBook(&lib, "Post Office", "Charles Bukowski", 1)
 
 	AddMember(&lib, "Charles Darwin")
 	AddMember(&lib, "Michael Jordan")
@@ -145,7 +146,7 @@ func main() {
 		fmt.Println(err)
 	}
 	PrintLibrary(&lib)
-	err = CheckInBook(&lib, "It")
+	err = CheckInBook(&lib, "It", "Michael Jordan")
 	if err != nil {
 		fmt.Println(err)
 	}
