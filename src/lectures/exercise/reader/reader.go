@@ -18,8 +18,19 @@
 
 package main
 
-import "fmt"
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
 
 func main() {
+	r := bufio.NewReader(os.Stdin)
 
+	commandsNum := 0
+	blankLineNum := 0
+
+	for {
+		input, inputErr := r.
+	}
 }
