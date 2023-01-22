@@ -15,7 +15,11 @@
 
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"golang.org/x/exp/constraints"
+)
 
 type Distance int32
 type Velocity float64
@@ -28,9 +32,21 @@ type Velocity float64
 // Mathematically:
 //   min <= value <= max
 
-/*
-func clamp(value, min, max) clamped_value {}
-*/
+type Numbers interface {
+	constraints.Float | constraints.Integer
+}
+
+// would also work with the constraints.Ordered
+// then there's no need to create our own generic type
+func clamp[N Numbers](value, min, max N) N {
+	if value < min {
+		return min
+	}
+	if value > max {
+		return max
+	}
+	return value
+}
 
 func testClampInt8() {
 	var (
