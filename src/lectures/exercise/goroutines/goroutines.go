@@ -28,12 +28,47 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"strconv"
 	"time"
 )
 
+func ReadNumsInFile(fileName string) int {
+	file, err := os.Open(fileName)
+	if err != nil {
+		fmt.Printf("Error opening file: %v error: %v\n", fileName, err)
+	}
+	defer file.Close()
+
+	sum := 0
+
+	r := bufio.NewScanner(file)
+	for r.Scan() {
+		input := r.Text()
+		num, err := strconv.Atoi(input)
+		if err != nil {
+			continue
+		} else {
+			sum += num
+		}
+	}
+	return sum
+}
 func main() {
 	files := []string{"num1.txt", "num2.txt", "num3.txt", "num4.txt", "num5.txt"}
+	var total int
+
+	for _, file := range files {
+		go func(fileName string) {
+			sum := ReadNumsInFile(fileName)
+			total += sum
+		}(file)
+	}
+
+	time.Sleep(5 * time.Millisecond)
+	if total == 4103109 {
+		fmt.Println("Correct")
+	} else {
+		fmt.Println("Sorry. Not Correct. total:", total)
+	}
 }
