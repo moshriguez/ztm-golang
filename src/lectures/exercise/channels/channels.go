@@ -27,15 +27,74 @@ func longCalculation(i Job) int {
 	return int(i) * 30
 }
 
-func makeJobs() []Job {
+func makeJobs(deterministic bool) []Job {
 	jobs := make([]Job, 0, 100)
 	for i := 0; i < 100; i++ {
-		jobs = append(jobs, Job(rand.Intn(10000)))
+		if deterministic {
+			jobs = append(jobs, Job(i))
+		} else {
+			jobs = append(jobs, Job(rand.Intn(10000)))
+		}
 	}
 	return jobs
 }
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
-	jobs := makeJobs()
+	sumIsDeterministic := false
+	jobs := makeJobs(sumIsDeterministic)
+
+	sum := 0
+	results := make(chan int, 100)
+	for _, job := range jobs {
+		go func(resultchan chan int, job Job) {
+			resultchan <- longCalculation(job)
+		}(results, job)
+	}
+	correctAns := TestAnswer()
+
+	// no response for x amount of time approach
+	// for {
+	// 	select {
+	// 	case result := <-results:
+	// 		sum += result
+	// 	case <-time.After(2 * time.Second):
+	// 		if sum == correctAns {
+	// 			fmt.Println("Correct")
+	// 			fmt.Println("Total:", sum)
+	// 		} else if sumIsDeterministic {
+	// 			fmt.Println("Sorry. That's not right.")
+	// 			fmt.Println("Total:", sum)
+	// 		} else {
+	// 			fmt.Println("Total:", sum)
+	// 		}
+	// 		return
+	// 	}
+	// }
+
+	// count the number of results approach
+	i := 0
+	for i < len(jobs) {
+		result := <-results
+		sum += result
+		i++
+	}
+	if sum == correctAns {
+		fmt.Println("Correct")
+		fmt.Println("Total:", sum)
+	} else if sumIsDeterministic {
+		fmt.Println("Sorry. That's not right.")
+		fmt.Println("Total:", sum)
+	} else {
+		fmt.Println("Total:", sum)
+	}
+
+}
+
+func TestAnswer() int {
+	ans := 0
+	for i := 0; i < 100; i++ {
+		ans += i * 30
+	}
+	return ans
 }
