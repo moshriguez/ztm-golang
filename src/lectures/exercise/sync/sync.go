@@ -19,7 +19,45 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"sync"
+	"unicode"
 )
 
-func main() {}
+func AnalyzeWord(input string) int {
+	count := 0
+	for _, l := range input {
+		if unicode.IsLetter(l) {
+			count += 1
+		}
+	}
+	return count
+}
+
+func main() {
+	r := bufio.NewScanner(os.Stdin)
+	r.Split(bufio.ScanWords)
+
+	var wg sync.WaitGroup
+	totalChan := make(chan int, 10)
+	total := 0
+	for r.Scan() {
+		input := r.Text()
+		wg.Add(1)
+		go func (totalChan chan int, wg *sync.WaitGroup) {
+			defer wg.Done()
+			totalChan <- AnalyzeWord(input)
+		}(totalChan, &wg)
+		
+	}
+	go func() {
+		wg.Wait()
+		close(totalChan)
+	}()
+	for n := range totalChan {
+		total += n
+	}
+	fmt.Println("Total Number of Letters:", total)
+}
