@@ -36,28 +36,61 @@ func AnalyzeWord(input string) int {
 	return count
 }
 
+type TotalLetters struct {
+	count int
+	sync.Mutex
+}
+
 func main() {
 	r := bufio.NewScanner(os.Stdin)
 	r.Split(bufio.ScanWords)
 
 	var wg sync.WaitGroup
-	totalChan := make(chan int, 10)
 	total := 0
-	for r.Scan() {
-		input := r.Text()
-		wg.Add(1)
-		go func (totalChan chan int, wg *sync.WaitGroup) {
-			defer wg.Done()
-			totalChan <- AnalyzeWord(input)
-		}(totalChan, &wg)
-		
+
+	// using a channel and wait groups; no mutexes
+	// totalChan := make(chan int, 10)
+	// for r.Scan() {
+	// 	input := r.Text()
+	// 	wg.Add(1)
+	// 	go func(totalChan chan int, wg *sync.WaitGroup) {
+	// 		defer wg.Done()
+	// 		totalChan <- AnalyzeWord(input)
+	// 	}(totalChan, &wg)
+	// }
+	// go func() {
+	// 	wg.Wait()
+	// 	close(totalChan)
+	// }()
+	// for n := range totalChan {
+	// 	total += n
+	// }
+
+	// fmt.Println("Total Number of Letters:", total)
+
+	// using mutex and wait groups without a channel
+	totalLetters := TotalLetters{}
+	for {
+		if r.Scan() {
+			input := r.Text()
+			wg.Add(1)
+			go func(word string) {
+				totalLetters.Lock()
+				defer totalLetters.Unlock()
+				defer wg.Done()
+				sum := AnalyzeWord(word)
+				totalLetters.count += sum
+			}(input)
+		} else {
+			break
+		}
 	}
-	go func() {
-		wg.Wait()
-		close(totalChan)
-	}()
-	for n := range totalChan {
-		total += n
-	}
+
+	wg.Wait()
+
+	totalLetters.Lock()
+	total = totalLetters.count
+	totalLetters.Unlock()
+
 	fmt.Println("Total Number of Letters:", total)
 }
